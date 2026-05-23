@@ -1,0 +1,26 @@
+import mongoose from "mongoose";
+
+const blog_user = mongoose.Schema({
+    username:{
+        type:String,
+        required:true
+    },
+
+    email:{
+        type:String,
+        required:true,
+        unique:true
+    },
+
+    password:{
+        type:String,
+        required:true
+    },
+    profilePicture:{
+        type:String
+    }
+},{timestamps : true});
+
+const User = mongoose.model('User',blog_user);
+
+export default User;
