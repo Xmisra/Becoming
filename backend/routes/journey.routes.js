@@ -1,6 +1,5 @@
 import express from "express";
-import { handleGetJourneys, handlePostJourney } from "../controllers/journey.controller.js";
-import { handleGetJourneyByVersion,handleGetAllJourneys } from "../controllers/journey.controller.js";
+import { handleGetAllJourneys, handleGetJourneyByVersion, handleGetJourneys, handleJourneyReflection, handlePostJourney } from "../controllers/journey.controller.js";
 import restrictValidUsersOnly from "../middlewares/auth.middleware.js";
 import { optionalAuth } from "../middlewares/auth.middleware.js";
 
@@ -14,6 +13,9 @@ journeyRoute.get("/explore",handleGetAllJourneys);
 
 //post a journey
 journeyRoute.post("/",restrictValidUsersOnly,handlePostJourney);
+
+//generate journey reflection
+journeyRoute.post("/:id/reflection",restrictValidUsersOnly,handleJourneyReflection);
 
 //get a journey
 journeyRoute.get("/:id",optionalAuth,handleGetJourneyByVersion);

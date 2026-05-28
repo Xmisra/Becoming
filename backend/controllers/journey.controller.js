@@ -1,5 +1,6 @@
 import Journey from "../models/journey.model.js";
 import Version from "../models/version.model.js";
+import generateJourneyReflection from "../services/ai.service.js";
 
 async function handleGetJourneys(req, res) {
     try {
@@ -177,4 +178,63 @@ async function handleGetAllJourneys(req,res){
         });
     }
 }
-export {handleGetJourneys,handlePostJourney,handleGetJourneyByVersion,handleGetAllJourneys};
+
+async function handleJourneyReflection(req,res){
+    
+    try{
+        const journeyId = req.params.id;
+
+        const journey = await Journey.findById(journeyId);
+
+        if(!journey)
+        {
+            return res.status(404).json({error:"no journey found!!"});
+        }
+
+
+        //check authorizations
+        const user = journey.author.toString();
+
+        if(user !== req.user.id)
+        {
+            return res.status(403).json({error:"unauthorized user!!"});
+        }
+
+        //fetch versions
+        const versions = await Version.find({
+            journeyId
+        }).sort({
+            createdAt : 1
+        });
+
+        if(versions.length === 0)
+        {
+            return res.status(400).json({
+                error : "there are currently no versions!!!"
+            });
+        }
+
+        //build reflection
+        let timelineText = "";
+
+        versions.forEach((version,index) => {
+            timelineText += `Version ${index+1}
+            Mood: ${version.mood}
+            content: ${version.content}
+            --------------------------`;
+        });
+
+        //generate reflection
+
+        const reflection = await generateJourneyReflection(timelineText);
+        return res.status(200).json({
+            reflection
+        });
+    }catch(err)
+    {
+        return res.status(500).json({
+            error : err.message
+        });
+    }
+}
+export {handleGetJourneys,handlePostJourney,handleGetJourneyByVersion,handleGetAllJourneys,handleJourneyReflection};

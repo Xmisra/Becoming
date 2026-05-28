@@ -16,6 +16,10 @@ export function getJourneyTimeline(id) {
   return api.get(`/journey/${id}`);
 }
 
+export function generateJourneyReflection(id) {
+  return api.post(`/journey/${id}/reflection`);
+}
+
 export function addJourneyVersion(id, formData) {
   return api.post(`/version/${id}`, formData);
 }

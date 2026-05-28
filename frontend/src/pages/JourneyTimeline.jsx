@@ -8,7 +8,7 @@ import PageShell from "../components/PageShell";
 import Textarea from "../components/Textarea";
 import { getApiError } from "../services/api";
 import { getProfilePictureUrl } from "../services/authService";
-import { addJourneyVersion, getJourneyTimeline } from "../services/journeyService";
+import { addJourneyVersion, generateJourneyReflection, getJourneyTimeline } from "../services/journeyService";
 import { formatDate, formatRelativeDate, formatShortDate } from "../utils/date";
 import { moods } from "../utils/moods";
 
@@ -23,6 +23,9 @@ function JourneyTimeline() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reflection, setReflection] = useState("");
+  const [reflectionLoading, setReflectionLoading] = useState(false);
+  const [reflectionError, setReflectionError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const backLink = canEdit ? "/dashboard" : "/explore";
@@ -34,6 +37,8 @@ function JourneyTimeline() {
 
   async function fetchTimeline() {
     setError("");
+    setReflection("");
+    setReflectionError("");
     setLoading(true);
 
     try {
@@ -70,12 +75,28 @@ function JourneyTimeline() {
         mood: formData.mood,
       });
       setVersions((prevVersions) => [...prevVersions, response.data.payload]);
+      setReflection("");
+      setReflectionError("");
       setFormData({ content: "", mood: "motivated" });
       setSuccess("Version added successfully.");
     } catch (err) {
       setError(getApiError(err, "Could not add version."));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleGenerateReflection() {
+    setReflectionError("");
+    setReflectionLoading(true);
+
+    try {
+      const response = await generateJourneyReflection(id);
+      setReflection(response.data.reflection || "");
+    } catch (err) {
+      setReflectionError(getApiError(err, "Could not generate reflection right now."));
+    } finally {
+      setReflectionLoading(false);
     }
   }
 
@@ -195,6 +216,50 @@ function JourneyTimeline() {
                 </div>
               )}
             </div>
+
+            <section className="mt-5 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 shadow-2xl shadow-gray-950/25">
+              <div className="border-b border-white/10 bg-white/[0.03] p-4 sm:p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-indigo-200 sm:text-sm">
+                      AI reflection
+                    </p>
+                    <h2 className="mt-1 text-xl font-bold text-white">A quiet read on your becoming</h2>
+                    <p className="mt-1.5 max-w-2xl text-sm leading-6 text-gray-300">
+                      AI reflections help summarize emotional growth and progress across your journey timeline.
+                    </p>
+                  </div>
+                  <button
+                    className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white px-4 py-2.5 text-sm font-semibold text-gray-950 shadow-lg shadow-black/20 transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-50 hover:shadow-xl disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/60 disabled:text-gray-500 disabled:shadow-none"
+                    disabled={reflectionLoading}
+                    type="button"
+                    onClick={handleGenerateReflection}
+                  >
+                    {reflectionLoading ? "Generating reflection..." : "Generate Reflection"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-5">
+                {reflectionError && (
+                  <div className="rounded-xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-medium leading-6 text-rose-100">
+                    {reflectionError}
+                  </div>
+                )}
+
+                {reflection ? (
+                  <article className="mt-0 animate-[fadeIn_420ms_ease-out] rounded-xl border border-white/10 bg-white/[0.06] p-4 shadow-xl shadow-black/20 sm:p-5">
+                    <p className="whitespace-pre-wrap text-[15px] leading-7 text-gray-100">
+                      {reflection}
+                    </p>
+                  </article>
+                ) : (
+                  <div className={`${reflectionError ? "mt-3" : ""} rounded-xl border border-dashed border-white/10 bg-white/[0.04] p-5 text-sm leading-6 text-gray-300`}>
+                    When ready, this space will hold a composed reading of the patterns, progress, and quieter shifts inside this timeline.
+                  </div>
+                )}
+              </div>
+            </section>
           </section>
 
           {canEdit && (
