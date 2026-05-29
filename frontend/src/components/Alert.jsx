@@ -7,7 +7,7 @@ function Alert({ message, type = "error" }) {
       : "border-rose-200/80 bg-rose-50/80 text-rose-800";
 
   return (
-    <div className={`rounded-xl border px-4 py-3 text-sm shadow-sm backdrop-blur ${classes}`}>
+    <div className={`rounded-xl border px-4 py-3 text-sm font-medium leading-6 shadow-sm backdrop-blur ${classes}`}>
       {message}
     </div>
   );
