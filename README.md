@@ -8,7 +8,7 @@ Instead of writing a single article, users create a journey and continuously add
 
 ## Live Demo
 
-Frontend: becoming-pi.vercel.app
+Frontend: https://becoming-pi.vercel.app/explore
 
 Backend API: https://becoming-k0tg.onrender.com
 
@@ -206,7 +206,7 @@ backend/
 ### Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Xmisra/Becoming.git
 cd becoming
 ```
 
