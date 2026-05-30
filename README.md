@@ -8,7 +8,7 @@ Instead of writing a single article, users create a journey and continuously add
 
 ## Live Demo
 
-Frontend: https://becoming-pi.vercel.app/explore
+Frontend: https://becoming-pi.vercel.app
 
 Backend API: https://becoming-k0tg.onrender.com
 
