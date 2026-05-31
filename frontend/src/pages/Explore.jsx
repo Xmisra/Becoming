@@ -13,24 +13,48 @@ function Explore() {
   const [journeys, setJourneys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
     async function fetchExploreJourneys() {
       setError("");
       setLoading(true);
 
       try {
-        const response = await getExploreJourneys();
-        setJourneys(response.data.journeys || []);
+        const response = await getExploreJourneys(selectedTag);
+        if (isCurrentRequest) {
+          setJourneys(response.data.journeys || []);
+        }
       } catch (err) {
-        setError(getApiError(err, "Could not load the explore feed."));
+        if (isCurrentRequest) {
+          setJourneys([]);
+          setError(getApiError(err, "Could not load the explore feed."));
+        }
       } finally {
-        setLoading(false);
+        if (isCurrentRequest) {
+          setLoading(false);
+        }
       }
     }
 
     fetchExploreJourneys();
-  }, []);
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [selectedTag]);
+
+  function handleTagClick(event, tag) {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedTag(tag);
+  }
+
+  function clearSelectedTag() {
+    setSelectedTag("");
+  }
 
   return (
     <PageShell>
@@ -68,28 +92,49 @@ function Explore() {
 
       <Alert message={error} />
 
+      {selectedTag ? (
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-bold text-indigo-950">
+            Showing: <span className="text-indigo-700">#{selectedTag}</span>
+          </p>
+          <button
+            type="button"
+            onClick={clearSelectedTag}
+            className="inline-flex w-fit items-center rounded-full border border-indigo-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-950 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+          >
+            Clear Filter
+          </button>
+        </div>
+      ) : null}
+
       {loading ? (
-        <Loading text="Loading public journeys..." />
+        <Loading text={selectedTag ? `Loading #${selectedTag} journeys...` : "Loading public journeys..."} />
       ) : journeys.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-indigo-200/80 bg-white/82 p-8 text-center shadow-2xl shadow-gray-200/70 backdrop-blur-xl">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-indigo-500 sm:text-sm">
             Quiet for now
           </p>
           <h3 className="mt-2 text-2xl font-black tracking-tight text-gray-950">
-            No public journeys have been shared yet.
+            {selectedTag ? "No journeys found for this tag." : "No public journeys have been shared yet."}
           </h3>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600">
-            When someone opens a journey to the community, it will appear here with its latest update.
+            {selectedTag
+              ? `Try clearing #${selectedTag} to return to the full community feed.`
+              : "When someone opens a journey to the community, it will appear here with its latest update."}
           </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {journeys.map((journey) => (
-            <Link
+            <article
               key={journey._id}
-              to={`/journey/${journey._id}`}
-              className="group flex min-h-[330px] flex-col overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-xl shadow-gray-200/70 ring-1 ring-gray-950/[0.02] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:bg-white hover:shadow-2xl hover:shadow-indigo-100/80"
+              className="group relative flex min-h-[330px] flex-col overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-xl shadow-gray-200/70 ring-1 ring-gray-950/[0.02] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:bg-white hover:shadow-2xl hover:shadow-indigo-100/80"
             >
+              <Link
+                to={`/journey/${journey._id}`}
+                aria-label={`Read ${journey.title}`}
+                className="absolute inset-0 z-10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+              />
               <div className="h-1.5 bg-gradient-to-r from-indigo-300 via-violet-300 to-rose-300" />
               <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -109,9 +154,9 @@ function Explore() {
                       <p className="truncate text-sm font-bold text-gray-950">
                         {journey.author?.username || "Unknown writer"}
                       </p>
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                      <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
                         Began {formatShortDate(journey.createdAt)}
-                    </p>
+                      </p>
                     </div>
                   </div>
                   <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
@@ -145,15 +190,27 @@ function Explore() {
                 )}
 
                 <div className="mt-auto pt-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {(journey.tags?.length ? journey.tags : ["untagged"]).map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-bold text-gray-600 shadow-sm"
-                      >
-                        {tag}
+                  <div className="relative z-20 flex flex-wrap gap-1.5">
+                    {journey.tags?.length ? (
+                      journey.tags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={(event) => handleTagClick(event, tag)}
+                          className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm transition duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 ${
+                            selectedTag === tag
+                              ? "border-indigo-300 bg-indigo-600 text-white shadow-indigo-100"
+                              : "border-gray-200/80 bg-white text-gray-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 hover:shadow-md"
+                          }`}
+                        >
+                          #{tag}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="rounded-full border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-bold text-gray-600 shadow-sm">
+                        untagged
                       </span>
-                    ))}
+                    )}
                   </div>
                   <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
                     <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
@@ -165,7 +222,7 @@ function Explore() {
                   </div>
                 </div>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       )}

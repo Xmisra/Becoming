@@ -131,15 +131,32 @@ async function handleGetJourneyByVersion(req,res)
 
 async function handleGetAllJourneys(req,res){
     try{
+        let journeys;
 
-        const journeys = await Journey.find({
+        const tag = req.query.tag;
+        if(!tag)
+        {
+            journeys = await Journey.find({
             isPublic : true
-        })
-        .populate("author","username profilePicture")
-        .sort({
-            createdAt : -1
-        })
-        .lean();
+            })
+            .populate("author","username profilePicture")
+            .sort({
+                createdAt : -1
+            })
+            .lean();
+        }
+        else
+        {
+            journeys = await Journey.find({
+                isPublic : true,
+                tags : tag
+            })
+            .populate("author","username profilePicture")
+            .sort({
+                createdAt : -1
+            })
+            .lean();
+        }
 
         const journeyIds = journeys.map((journey) => journey._id);
 

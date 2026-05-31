@@ -8,8 +8,8 @@ export function createJourney(formData) {
   return api.post("/journey", formData);
 }
 
-export function getExploreJourneys() {
-  return api.get("/journey/explore");
+export function getExploreJourneys(tag) {
+  return api.get("/journey/explore", tag ? { params: { tag } } : undefined);
 }
 
 export function getJourneyTimeline(id) {
